@@ -1,29 +1,96 @@
 # ChatIcesi
 
 
-.restart-button {
-    background-color: #4CAF50;
-    border: none;
-    color: white;
-    padding: 10px 20px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    margin: 10px 0;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s;
+import Board from '../components/Board.js';
+// import axios from "axios";
+
+const getBoard = async () => {
+  let data = await fetch('http://localhost:5000/board', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  return data.json();
+};
+
+const showCell = async (cellId) => {
+  const id = cellId.split('-');
+  const i = parseInt(id[0]);
+  const j = parseInt(id[1]);
+
+  let data = await fetch('http://localhost:5000/board', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      i: i,
+      j: j,
+    }),
+  });
+  const container = document.getElementById('home-page');
+  container.removeChild(container.querySelector('.board'));
+
+  const newMatrix = await data.json();
+
+  const win = newMatrix.data.win;
+  const end = newMatrix.data.gameEnd;
+  console.log({ win, end });
+  if (end) {
+    if (win) {
+      alert('You Win!!');
+    } else {
+      alert('You Loss :c');
+    }
+  }
+
+  const board = Board(newMatrix.data.board, showCell);
+  container.appendChild(board);
+};
+
+function Game() {
+  const container = document.createElement('div');
+  container.id = 'home-page';
+  // getBoardAxios();
+  
+  const title = document.createElement('h1');
+  title.innerText = 'Land Mines';
+  title.classList = 'title';
+  container.appendChild(title);
+
+  // Botón de reinicio
+  const restartButton = document.createElement('button');
+  restartButton.innerText = 'Reiniciar Juego';
+  restartButton.classList = 'restart-button';
+  container.appendChild(restartButton);
+
+  // Función para reiniciar el juego
+  function restartGame() {
+    const container = document.getElementById('home-page');
+    const currentBoard = container.querySelector('.board');
+    if (currentBoard) {
+      container.removeChild(currentBoard);
+    }
+    
+    const cells = getBoard();
+    cells.then((data) => {
+      const board = Board(data.data.board, showCell);
+      container.appendChild(board);
+    });
+  }
+
+  // Event listener para el botón de reinicio
+  restartButton.addEventListener('click', restartGame);
+
+  // Inicializar el juego por primera vez
+  const cells = getBoard();
+  cells.then((data) => {
+    const board = Board(data.data.board, showCell);
+    container.appendChild(board);
+  });
+
+  return container;
 }
 
-.restart-button:hover {
-    background-color: #45a049;
-}
-
-.restart-button:active {
-    background-color: #3d8b40;
-}
-
-.title {
-    margin-bottom: 10px;
-}
+export default Game;
